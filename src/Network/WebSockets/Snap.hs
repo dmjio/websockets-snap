@@ -6,17 +6,17 @@ module Network.WebSockets.Snap
     , runWebSocketsSnapWith
     ) where
 
-
 --------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder      (Builder)
 import qualified Blaze.ByteString.Builder      as Builder
+import           Control.Applicative           ((<$>))
 import           Control.Concurrent            (forkIO, myThreadId, threadDelay)
 import           Control.Concurrent.MVar       (MVar, newEmptyMVar, putMVar,
                                                 takeMVar)
 import           Control.Exception             (Exception (..),
-                                                SomeException (..), handle,
-                                                throw, throwTo)
-import           Control.Monad                 (forever)
+                                                SomeException (..), evaluate,
+                                                handle, throw, throwTo)
+import           Control.Monad                 (forever, join)
 import           Control.Monad.Trans           (lift)
 import           Data.ByteString               (ByteString)
 import qualified Data.ByteString.Char8         as BC
@@ -146,7 +146,7 @@ runWebSocketsSnapWith options app = do
                     , WS.pendingOut      = os
                     }
 
-        _ <- lift $ forkIO $ app pc >> throwTo thisThread ServerAppDone
+        _ <- lift $ forkIO $ join (evaluate <$> app pc) >> throwTo thisThread ServerAppDone
         copyIterateeToMVar tickle mvar
 
 
